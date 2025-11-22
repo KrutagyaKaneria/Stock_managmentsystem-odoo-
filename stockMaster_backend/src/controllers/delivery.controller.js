@@ -1,4 +1,6 @@
 // inside delivery.controller.js (validate endpoint)
+import * as deliveryService from "../services/delivery.service.js";
+import { success, fail } from "../utils/response.js";
 import prisma from "../config/db.js";
 import * as stockService from "../services/stock.service.js";
 
@@ -22,7 +24,7 @@ export const validateDelivery = async (req, res, next) => {
         if (!sr) throw new Error(`Insufficient stock for product ${pid}`);
 
         // decrement from chosen location
-        await tx.stockRecord.update({ where: { id: sr.id }, data: { quantity: toNumber(sr.quantity) - qty }});
+        await tx.stockRecord.update({ where: { id: sr.id }, data: { quantity: Number(sr.quantity) - qty }});
 
         // create move
         const move = await tx.stockMove.create({
@@ -34,8 +36,8 @@ export const validateDelivery = async (req, res, next) => {
             toLocationId: null,
             quantity: qty,
             uom: L.uom || null,
-            status: "done",
-            createdBy: packed_by_id || null
+            status: "done"
+            // createdBy: packed_by_id || null
           }
         });
         moves.push(move);
@@ -52,4 +54,45 @@ export const validateDelivery = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+
+export const listDeliveries = async (req, res, next) => {
+  try {
+    const { status, warehouse_id } = req.query;
+    const rows = await deliveryService.listDeliveries({ status, warehouse_id });
+    return success(res, rows);
+  } catch (err) { next(err); }
+};
+
+export const createDelivery = async (req, res, next) => {
+  try {
+    const delivery = await deliveryService.createDelivery(req.body);
+    return success(res, delivery, "Delivery created");
+  } catch (err) { next(err); }
+};
+
+export const getDeliveryById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await deliveryService.getDeliveryById(id);
+    if (!row) return fail(res, "Delivery not found", 404);
+    return success(res, row);
+  } catch (err) { next(err); }
+};
+
+export const updateDelivery = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const updated = await deliveryService.updateDelivery(id, req.body);
+    return success(res, updated, "Delivery updated");
+  } catch (err) { next(err); }
+};
+
+export const deleteDelivery = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    await deliveryService.deleteDelivery(id);
+    return success(res, null, "Delivery deleted");
+  } catch (err) { next(err); }
 };

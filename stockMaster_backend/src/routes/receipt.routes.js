@@ -1,6 +1,6 @@
 // src/routes/receipt.routes.js
 import express from "express";
-import * as receiptController from "../controllers/receipt.controller.js";
+import * as receiptController from "../controllers/receipt.controller.js"
 
 const router = express.Router();
 

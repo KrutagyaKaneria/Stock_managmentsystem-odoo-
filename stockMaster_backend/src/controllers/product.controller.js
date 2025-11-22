@@ -1,4 +1,4 @@
-import * as productService from "../services/product.services.js";
+import * as productService from "../services/product.service.js";
 import { success, fail } from "../utils/response.js";
 
 // GET /api/v1/products

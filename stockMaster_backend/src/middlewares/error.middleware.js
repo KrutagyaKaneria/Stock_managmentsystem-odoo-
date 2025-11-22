@@ -1,8 +1,10 @@
-export default function errorMiddleware(err, req, res, next) {
+// src/middleware/error.middleware.js
+
+export const errorHandler = (err, req, res, next) => {
   console.error("ERROR:", err);
 
-  res.status(500).json({
+  return res.status(500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });
-}
+};

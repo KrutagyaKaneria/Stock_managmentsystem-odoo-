@@ -164,68 +164,68 @@ export const deleteReceipt = async (id) => {
  * Receive a receipt: transactional application of lines to stock.
  * Input: { receiptId, lines: [{ product_id, qty_received, uom }], receivedBy, notes }
  */
-export const receiveReceipt = async ({ receiptId, lines = [], receivedBy = null, notes = null }) => {
-  const receipt = await prisma.receipt.findUnique({ where: { id: receiptId }});
-  if (!receipt) throw new Error("Receipt not found");
-  if (!Array.isArray(lines) || lines.length === 0) throw new Error("No lines to receive");
+// export const receiveReceipt = async ({ receiptId, lines = [], receivedBy = null, notes = null }) => {
+//   const receipt = await prisma.receipt.findUnique({ where: { id: receiptId }});
+//   if (!receipt) throw new Error("Receipt not found");
+//   if (!Array.isArray(lines) || lines.length === 0) throw new Error("No lines to receive");
 
-  const moves = [];
-  await prisma.$transaction(async (tx) => {
-    // validate location & warehouse exist
-    const location = await tx.location.findUnique({ where: { id: receipt.locationId }});
-    if (!location) throw new Error("Receipt location not found");
+//   const moves = [];
+//   await prisma.$transaction(async (tx) => {
+//     // validate location & warehouse exist
+//     const location = await tx.location.findUnique({ where: { id: receipt.locationId }});
+//     if (!location) throw new Error("Receipt location not found");
 
-    for (const L of lines) {
-      const pid = Number(L.product_id);
-      const qty = Number(L.qty_received);
+//     for (const L of lines) {
+//       const pid = Number(L.product_id);
+//       const qty = Number(L.qty_received);
 
-      if (qty <= 0) continue;
+//       if (qty <= 0) continue;
 
-      // update receipt line qty_received (increment)
-      await tx.receiptLine.updateMany({
-        where: { receiptId, productId: pid },
-        data: { qtyReceived: { increment: qty } }
-      });
+//       // update receipt line qty_received (increment)
+//       await tx.receiptLine.updateMany({
+//         where: { receiptId, productId: pid },
+//         data: { qtyReceived: { increment: qty } }
+//       });
 
-      // create or update stock record at receipt.locationId
-      const existing = await tx.stockRecord.findFirst({ where: { productId: pid, locationId: receipt.locationId }});
-      if (existing) {
-        await tx.stockRecord.update({
-          where: { id: existing.id },
-          data: { quantity: existing.quantity + qty, uom: L.uom || existing.uom }
-        });
-      } else {
-        await tx.stockRecord.create({
-          data: {
-            productId: pid,
-            warehouseId: receipt.warehouseId,
-            locationId: receipt.locationId,
-            quantity: qty,
-            uom: L.uom || null
-          }
-        });
-      }
+//       // create or update stock record at receipt.locationId
+//       const existing = await tx.stockRecord.findFirst({ where: { productId: pid, locationId: receipt.locationId }});
+//       if (existing) {
+//         await tx.stockRecord.update({
+//           where: { id: existing.id },
+//           data: { quantity: existing.quantity + qty, uom: L.uom || existing.uom }
+//         });
+//       } else {
+//         await tx.stockRecord.create({
+//           data: {
+//             productId: pid,
+//             warehouseId: receipt.warehouseId,
+//             locationId: receipt.locationId,
+//             quantity: qty,
+//             uom: L.uom || null
+//           }
+//         });
+//       }
 
-      // create stock move ledger
-      const move = await tx.stockMove.create({
-        data: {
-          type: "receipt",
-          reference: receipt.reference,
-          productId: pid,
-          fromLocationId: null,
-          toLocationId: receipt.locationId,
-          quantity: qty,
-          uom: L.uom || null,
-          status: "done",
-          createdBy: receivedBy
-        }
-      });
-      moves.push(move);
-    }
+//       // create stock move ledger
+//       const move = await tx.stockMove.create({
+//         data: {
+//           type: "receipt",
+//           reference: receipt.reference,
+//           productId: pid,
+//           fromLocationId: null,
+//           toLocationId: receipt.locationId,
+//           quantity: qty,
+//           uom: L.uom || null,
+//           status: "done",
+//           createdBy: receivedBy
+//         }
+//       });
+//       moves.push(move);
+//     }
 
-    // mark receipt done
-    await tx.receipt.update({ where: { id: receiptId }, data: { status: "done" }});
-  });
+//     // mark receipt done
+//     await tx.receipt.update({ where: { id: receiptId }, data: { status: "done" }});
+//   });
 
-  return { receiptId, status: "done", stock_moves: moves };
-};
+//   return { receiptId, status: "done", stock_moves: moves };
+// };

@@ -1,38 +1,25 @@
+// src/app.js
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
-
-// ROUTES (clean import)
-import productRoutes from "./routes/product.routes.js";
-import warehouseRoutes from "./routes/warehouse.routes.js";
-import locationRoutes from "./routes/location.routes.js";
-import receiptRoutes from "./routes/receipt.routes.js";
-import deliveryRoutes from "./routes/delivery.routes.js";
-import transferRoutes from "./routes/transfer.routes.js";
-import adjustmentRoutes from "./routes/adjustment.routes.js";
-import stockMoveRoutes from "./routes/stockmove.routes.js";
-import dashboardRoutes from "./routes/dashboard.routes.js";
-
-// ERROR MIDDLEWARE
-import errorMiddleware from "./middlewares/error.middleware.js";
+import routes from "./routes/index.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
+// Middlewares
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
 
-// REGISTER API ROUTES
-app.use("/api/v1/products", productRoutes);
-app.use("/api/v1/warehouses", warehouseRoutes);
-app.use("/api/v1/locations", locationRoutes);
-app.use("/api/v1/receipts", receiptRoutes);
-app.use("/api/v1/deliveries", deliveryRoutes);
-app.use("/api/v1/transfers", transferRoutes);
-app.use("/api/v1/adjustments", adjustmentRoutes);
-app.use("/api/v1/stock-moves", stockMoveRoutes);
-app.use("/api/v1/dashboard", dashboardRoutes);
+// API Routes
+app.use("/api/v1", routes);
 
-// GLOBAL ERROR HANDLER
-app.use(errorMiddleware);
+// Not found handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
+});
+
+// Error handler
+app.use(errorHandler);
 
 export default app;

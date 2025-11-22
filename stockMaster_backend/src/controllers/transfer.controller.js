@@ -50,3 +50,46 @@ export const validateTransfer = async (req, res, next) => {
     next(err);
   }
 };
+
+import * as transferService from "../services/transfer.service.js";
+import { success, fail } from "../utils/response.js";
+
+export const listTransfers = async (req, res, next) => {
+  try {
+    const { status, from_warehouse_id, to_warehouse_id } = req.query;
+    const rows = await transferService.listTransfers({ status, from_warehouse_id, to_warehouse_id });
+    return success(res, rows);
+  } catch (err) { next(err); }
+};
+
+export const createTransfer = async (req, res, next) => {
+  try {
+    const transfer = await transferService.createTransfer(req.body);
+    return success(res, transfer, "Transfer created");
+  } catch (err) { next(err); }
+};
+
+export const getTransferById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await transferService.getTransferById(id);
+    if (!row) return fail(res, "Transfer not found", 404);
+    return success(res, row);
+  } catch (err) { next(err); }
+};
+
+export const updateTransfer = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const updated = await transferService.updateTransfer(id, req.body);
+    return success(res, updated, "Transfer updated");
+  } catch (err) { next(err); }
+};
+
+export const deleteTransfer = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    await transferService.deleteTransfer(id);
+    return success(res, null, "Transfer deleted");
+  } catch (err) { next(err); }
+};

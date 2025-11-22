@@ -38,3 +38,48 @@ export const createAdjustment = async (req, res, next) => {
     next(err);
   }
 };
+
+// src/controllers/adjustment.controller.js
+import * as adjustmentService from "../services/adjustment.service.js";
+import { success, fail } from "../utils/response.js";
+
+export const listAdjustments = async (req, res, next) => {
+  try {
+    const { status, warehouse_id } = req.query;
+    const rows = await adjustmentService.listAdjustments({ status, warehouse_id });
+    return success(res, rows);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAdjustmentById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await adjustmentService.getAdjustmentById(id);
+    if (!row) return fail(res, "Adjustment not found", 404);
+    return success(res, row);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateAdjustment = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const updated = await adjustmentService.updateAdjustment(id, req.body);
+    return success(res, updated, "Adjustment updated");
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteAdjustment = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    await adjustmentService.deleteAdjustment(id);
+    return success(res, null, "Adjustment deleted");
+  } catch (err) {
+    next(err);
+  }
+};
