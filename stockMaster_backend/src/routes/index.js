@@ -1,6 +1,7 @@
 // src/routes/index.js
 import express from "express";
 
+import authRoutes from "./auth.routes.js";
 import productRoutes from "./product.routes.js";
 import warehouseRoutes from "./warehouse.routes.js";
 import locationRoutes from "./location.routes.js";
@@ -13,6 +14,7 @@ import dashboardRoutes from "./dashboard.routes.js";
 
 const router = express.Router();
 
+router.use("/auth", authRoutes);
 router.use("/products", productRoutes);
 router.use("/warehouses", warehouseRoutes);
 router.use("/locations", locationRoutes);

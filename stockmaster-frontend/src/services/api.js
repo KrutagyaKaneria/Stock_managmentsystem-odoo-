@@ -9,15 +9,39 @@ const api = axios.create({
   }
 })
 
+// Add token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Handle response errors
 api.interceptors.response.use(
   response => response,
   error => {
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
     console.error('API Error:', error)
     return Promise.reject(error)
   }
 )
 
 export default {
+  // Authentication
+  sendOTP: (email) => api.post('/auth/send-otp', { email }),
+  verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
+  logout: () => api.post('/auth/logout'),
+
   // Products
   getProducts: () => api.get('/products'),
   createProduct: (data) => api.post('/products', data),
