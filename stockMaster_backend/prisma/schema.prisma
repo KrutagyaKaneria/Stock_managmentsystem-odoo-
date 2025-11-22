@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ***********************
+ * USERS
+ * ***********************
+ */
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  fullName  String?
+  role      String
+  createdAt DateTime @default(now())
+}
+
+/**
+ * ***********************
+ * CATEGORIES
+ * ***********************
+ */
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+/**
+ * ***********************
+ * WAREHOUSE + LOCATION
+ * ***********************
+ */
+model Warehouse {
+  id           Int     @id @default(autoincrement())
+  name         String
+  locationCode String?
+
+  locations    Location[]
+  stockRecords StockRecord[]
+  receipts     Receipt[]
+  adjustments  Adjustment[]
+
+  transfersFrom Transfer[] @relation("WarehouseFrom")
+  transfersTo   Transfer[] @relation("WarehouseTo")
+  deliveries    Delivery[]
+}
+
+model Location {
+  id          Int     @id @default(autoincrement())
+  warehouseId Int
+  name        String
+  code        String?
+
+  warehouse    Warehouse     @relation(fields: [warehouseId], references: [id])
+  stockRecords StockRecord[]
+
+  receipts    Receipt[]    @relation("LocationReceipts")
+  adjustments Adjustment[] @relation("LocationAdjustments")
+
+  transfersFrom Transfer[] @relation("LocationFrom")
+  transfersTo   Transfer[] @relation("LocationTo")
+}
+
+/**
+ * ***********************
+ * PRODUCT + STOCK
+ * ***********************
+ */
+model Product {
+  id           Int    @id @default(autoincrement())
+  name         String
+  sku          String @unique
+  categoryId   Int?
+  uom          String
+  reorderLevel Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  stockRecords StockRecord[]
+  stockMoves   StockMove[]
+
+  receiptLines    ReceiptLine[]
+  deliveryLines   DeliveryLine[]
+  transferLines   TransferLine[]
+  adjustmentLines AdjustmentLine[]
+}
+
+model StockRecord {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  warehouseId Int
+  locationId  Int
+  quantity    Decimal  @default(0)
+  uom         String?
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  product   Product   @relation(fields: [productId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  location  Location  @relation(fields: [locationId], references: [id])
+}
+
+model StockMove {
+  id             Int      @id @default(autoincrement())
+  type           String
+  reference      String?
+  productId      Int
+  fromLocationId Int?
+  toLocationId   Int?
+  quantity       Decimal
+  uom            String?
+  status         String
+  createdAt      DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+/**
+ * ***********************
+ * RECEIPTS (Incoming)
+ * ***********************
+ */
+model Receipt {
+  id          Int      @id @default(autoincrement())
+  reference   String?
+  supplierId  Int?
+  warehouseId Int
+  locationId  Int
+  status      String
+  createdAt   DateTime @default(now())
+
+  lines ReceiptLine[]
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  location  Location  @relation("LocationReceipts", fields: [locationId], references: [id])
+}
+
+model ReceiptLine {
+  id          Int     @id @default(autoincrement())
+  receiptId   Int
+  productId   Int
+  qtyExpected Decimal
+  qtyReceived Decimal @default(0)
+  uom         String?
+  notes       String?
+
+  receipt Receipt @relation(fields: [receiptId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+/**
+ * ***********************
+ * DELIVERIES (Outgoing)
+ * ***********************
+ */
+model Delivery {
+  id          Int      @id @default(autoincrement())
+  reference   String?
+  customerId  Int?
+  warehouseId Int
+  status      String
+  createdAt   DateTime @default(now())
+
+  lines DeliveryLine[]
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+}
+
+model DeliveryLine {
+  id         Int     @id @default(autoincrement())
+  deliveryId Int
+  productId  Int
+  qtyOrdered Decimal
+  qtyPicked  Decimal @default(0)
+  qtyPacked  Decimal @default(0)
+  uom        String?
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+}
+
+/**
+ * ***********************
+ * INTERNAL TRANSFERS
+ * ***********************
+ */
+model Transfer {
+  id        Int     @id @default(autoincrement())
+  reference String?
+
+  fromWarehouseId Int
+  toWarehouseId   Int
+
+  fromLocationId Int
+  toLocationId   Int
+
+  status    String
+  createdAt DateTime @default(now())
+
+  lines TransferLine[]
+
+  fromWarehouse Warehouse @relation("WarehouseFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse @relation("WarehouseTo", fields: [toWarehouseId], references: [id])
+
+  fromLocation Location @relation("LocationFrom", fields: [fromLocationId], references: [id])
+  toLocation   Location @relation("LocationTo", fields: [toLocationId], references: [id])
+}
+
+model TransferLine {
+  id         Int     @id @default(autoincrement())
+  transferId Int
+  productId  Int
+  qty        Decimal
+  uom        String?
+
+  transfer Transfer @relation(fields: [transferId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+}
+
+/**
+ * ***********************
+ * ADJUSTMENTS
+ * ***********************
+ */
+model Adjustment {
+  id          Int      @id @default(autoincrement())
+  reference   String?
+  warehouseId Int
+  locationId  Int
+  status      String
+  createdAt   DateTime @default(now())
+
+  lines AdjustmentLine[]
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  location  Location  @relation("LocationAdjustments", fields: [locationId], references: [id])
+}
+
+model AdjustmentLine {
+  id           Int     @id @default(autoincrement())
+  adjustmentId Int
+  productId    Int
+  qtyRecorded  Decimal
+  qtyCounted   Decimal
+  difference   Decimal
+  reason       String?
+
+  adjustment Adjustment @relation(fields: [adjustmentId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
+}
