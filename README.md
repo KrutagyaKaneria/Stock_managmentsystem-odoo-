@@ -1,0 +1,1 @@
+# Stock_managmentsystem-odoo-
