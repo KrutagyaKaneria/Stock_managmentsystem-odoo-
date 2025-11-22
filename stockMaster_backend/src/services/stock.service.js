@@ -317,3 +317,5 @@ export const checkAndNotifyLowStock = async (productId, warehouseId) => {
     }
   }
 };
+
+export default emailService
