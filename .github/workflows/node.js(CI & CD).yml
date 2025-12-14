@@ -86,10 +86,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build -t YOUR_DOCKER_USERNAME/YOUR_IMAGE_NAME:${{ github.sha }} .
+        run: docker build -t krutagyakaneria/nodejs_cicd_workflow:${{ github.sha }} .
 
       - name: Push Docker Image
-        run: docker push YOUR_DOCKER_USERNAME/YOUR_IMAGE_NAME:${{ github.sha }}
+        run: docker push krutagyakaneria/nodejs_cicd_workflow:${{ github.sha }}
 
 
   deploy:
